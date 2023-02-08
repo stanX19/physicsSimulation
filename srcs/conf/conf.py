@@ -6,7 +6,6 @@ class Effects:
     def __init__(self):
         self.GRAVITY = 0
         self.AIR_RESISTANCE = 0
-        self.BLACK_HOLE = []
         self.COLLISION = True
         self.MATTER_REPEL = True
         self.VECTOR = 0

@@ -7,6 +7,7 @@ import sys
 sys.path.append(os.path.dirname(__file__))
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from srcs.classes.Sphere import Sphere
+from srcs.classes.BlackHole import BlackHole
 from srcs.physics_effect.sphere_sphere_collision import sphere_sphere_collision
 from srcs.physics_effect.sphere_sphere_repel import sphere_sphere_repel
 from srcs.physics_effect.apply_drag import apply_drag
@@ -40,6 +41,8 @@ def init_data():
             conf.Status.OBJS.append(Sphere(**kwargs))
         elif 'random' in key:
             conf.Status.OBJS += random_balls(**kwargs)
+        elif 'blackhole' in key:
+            conf.Status.BLACKHOLE.append(BlackHole(**kwargs))
 
 
 def main():
@@ -47,6 +50,8 @@ def main():
     pressed = []
     scale = 100
     directions = {82: (0, -scale), 81: (0, scale), 80: (-scale, 0), 79: (scale, 0)}
+    # mouse
+    mouse = []
 
     # init
     init_data()
@@ -67,6 +72,12 @@ def main():
                 pressed.append(event.scancode)
             elif event.type == pygame.KEYUP:
                 pressed.remove(event.scancode)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                mouse = []
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse = event.pos
+            elif event.type == pygame.MOUSEMOTION and mouse:
+                mouse = event.pos
 
         for key in pressed:
             if key == 21:
@@ -78,10 +89,29 @@ def main():
             if key == 44:  # space key
                 for ball in conf.Status.OBJS:
                     apply_drag(ball, 0.05)
+        if mouse:
+            print(mouse)
+            for ball in conf.Status.OBJS:
+                rad = 100
+                x_dis = mouse[0] - ball.x
+                y_dis = mouse[1] - ball.y
+                dis = math.sqrt(x_dis**2 + y_dis**2)
+                if abs(dis) < rad:
+                    ball.xv = x_dis/10
+                    ball.yv = y_dis/10
 
         conf.Status.WINDOW.fill(conf.colors["BACKGROUND"])
         conf.Status.OBJS.sort(key=lambda x: x.x - x.rad)
 
+        to_pop = []
+        for black_hole in conf.Status.BLACKHOLE:
+            for idx, ball in enumerate(conf.Status.OBJS):
+                if black_hole.x - 10 <= ball.x <= black_hole.x + 10:
+                    if math.sqrt((ball.x - black_hole.x) ** 2 + (ball.y - black_hole.y) ** 2) < ball.rad + 10:
+                        to_pop.append(idx)
+        for i, idx in enumerate(set(to_pop)):
+            conf.Status.OBJS.pop(idx - i)
+        # velocity
         for idx, ball in enumerate(conf.Status.OBJS):
             for other in conf.Status.OBJS[idx + 1:]:
                 rad = ball.rad + other.rad
@@ -93,11 +123,14 @@ def main():
                             sphere_sphere_repel(ball, other)
                 else:
                     break
+            for black_hole in conf.Status.BLACKHOLE:
+                black_hole.attract(ball)
             if conf.Effects.GRAVITY:
                 ball.yv += conf.Effects.GRAVITY
             if conf.Effects.AIR_RESISTANCE:
                 apply_drag(ball, conf.Effects.AIR_RESISTANCE)
 
+        # position
         for ball in conf.Status.OBJS:
             ball.update_position()
             ball.draw()
@@ -106,6 +139,9 @@ def main():
             if conf.Effects.TRAIL:
                 print_trail(ball)
 
+        for black_hole in conf.Status.BLACKHOLE:
+            if black_hole.visible:
+                black_hole.draw()
         pygame.display.update()
     pygame.quit()
 
