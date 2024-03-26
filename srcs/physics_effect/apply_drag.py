@@ -1,3 +1,3 @@
-def apply_drag(object, ratio=0.05):
-    object.yv = object.yv * (1 - ratio)
-    object.xv = object.xv * (1 - ratio)
+def apply_drag(ball, ratio=0.05):
+    ball.yv = ball.yv * (1 - ratio)
+    ball.xv = ball.xv * (1 - ratio)

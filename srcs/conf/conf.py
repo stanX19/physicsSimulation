@@ -1,8 +1,9 @@
 import ast
+import os
 import configparser
 
 
-class Effects:
+class _Effects:
     def __init__(self):
         self.GRAVITY = 0
         self.AIR_RESISTANCE = 0
@@ -12,13 +13,14 @@ class Effects:
         self.TRAIL = False
 
 
-class Status:
+class _Status:
     def __init__(self):
         self.SCREEN_SIZE = (1200, 700)
         self.WINDOW = None
         self.RUNNING = True
         self.OBJS = []
         self.BLACKHOLE = []
+        self.BARRIERS = []
         self.object_kwargs = {}
 
     @property
@@ -26,7 +28,7 @@ class Status:
         return self.SCREEN_SIZE[0] / 2, self.SCREEN_SIZE[1] / 2
 
 
-Effects = Effects()
+Effects = _Effects()
 colors = {
     "WHITE": (255, 255, 255),
     "BLACK": (0, 0, 0),
@@ -38,7 +40,7 @@ colors = {
 
     "BACKGROUND": (0, 0, 0)
 }
-Status = Status()
+Status = _Status()
 
 
 def read_config(path: str):
@@ -50,7 +52,15 @@ def read_config(path: str):
 
 def init_configs():
     global Effects, colors, Status
-    confdict = read_config(r'assets\config.cfg')
+    settings = read_config(r'assets\base_settings.cfg')
+    config_path = settings["base_settings"]["default_cfg"]
+
+    confdict = read_config(os.path.join("assets", config_path))
+
+    Status.object_kwargs = {}
+    Status.OBJS = []
+    Status.BLACKHOLE = []
+    Status.BARRIERS = []
 
     for key in confdict:
         if key in ["color", "effects", "status"]:

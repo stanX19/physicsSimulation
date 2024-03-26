@@ -2,42 +2,54 @@ import math
 import pygame
 from srcs.conf import conf
 
-class Sphere():
+
+class Sphere:
     def __init__(self, x=0, y=0, xv=0, yv=0, mass=0, color=(255, 255, 255), elasticity=1, **kwargs):
         self.x = x
         self.y = y
         self.xv = xv
         self.yv = yv
+        self.impulse_x = 0
+        self.impulse_y = 0
         self.mass = mass
         self.color = color
         self.elasticity = elasticity
 
+        self.rad = math.sqrt(mass / 3.142)
         for key, val in kwargs.items():
             setattr(self, key, val)
-        self.rad = math.sqrt(mass / 3.142)
+
+        self.updated = False
 
     @property
     def momentum(self):
-        return math.sqrt((self.xv) ** 2 + (self.yv) ** 2) * self.mass
+        return math.hypot(self.xv, self.yv) * self.mass
+
     @property
     def resultant_vector(self):
-        return math.sqrt((self.xv) ** 2 + (self.yv) ** 2)
+        return math.hypot(self.xv, self.yv)
 
-    def update_position(self):
+    def update(self):
+        # self.color = (min(255, int(math.hypot(self.impulse_x, self.impulse_y))), 255, 0)
+        if self.x + self.rad > conf.Status.SCREEN_SIZE[0] and self.xv > 0:
+            self.impulse_x = -self.xv * self.mass * 2
+        elif self.x - self.rad < 0 and self.xv < 0:
+            self.impulse_x = -self.xv * self.mass * 2
+        self.xv += self.impulse_x / self.mass / 2
         self.x += self.xv
-        if self.x + self.rad > conf.Status.SCREEN_SIZE[0]:
-            self.xv = -self.xv
-            self.x = 2 * conf.Status.SCREEN_SIZE[0] - self.x - 2 * self.rad
-        elif self.x - self.rad < 0:
-            self.xv = -self.xv
-            self.x = -self.x + 2 * self.rad
+        self.xv += self.impulse_x / self.mass / 2
+        self.impulse_x = 0
+
+        if self.y + self.rad > conf.Status.SCREEN_SIZE[1] and self.yv > 0:
+            self.impulse_y = -self.yv * self.mass * 2
+        elif self.y - self.rad < 0 and self.yv < 0:
+            self.impulse_y = -self.yv * self.mass * 2
+        self.yv += self.impulse_y / self.mass / 2
         self.y += self.yv
-        if self.y + self.rad > conf.Status.SCREEN_SIZE[1]:
-            self.yv = -self.yv
-            self.y = 2 * conf.Status.SCREEN_SIZE[1] - self.y - 2 * self.rad
-        elif self.y - self.rad < 0:
-            self.yv = -self.yv
-            self.y = -self.y + 2 * self.rad
+        self.yv += self.impulse_y / self.mass / 2
+        self.impulse_y = 0
+
+        self.updated = True
 
     def draw(self, window=None):
         if window is None:
